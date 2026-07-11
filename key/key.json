@@ -1,0 +1,36 @@
+{
+  "SCRIPT_A_AUTO_FARM": {
+    "ZAYD-A-WK-998": {
+      "expired": "2026-07-18",
+      "status": "active"
+    },
+    "ZAYD-A-MN-112": {
+      "expired": "2026-07-01",
+      "status": "expired"
+    }
+  },
+  "SCRIPT_B_AUTO_BUY": {
+    "ZAYD-B-WK-774": {
+      "expired": "2026-07-18",
+      "status": "active"
+    }
+  },
+  "SCRIPT_C_PATHFINDING": {
+    "ZAYD-C-MN-552": {
+      "expired": "2026-08-11",
+      "status": "active"
+    }
+  },
+  "SCRIPT_D_AUTO_COOK": {
+    "ZAYD-D-WK-331": {
+      "expired": "2026-07-10",
+      "status": "expired"
+    }
+  },
+  "SCRIPT_E_PRO_INTERFACE": {
+    "ZAYD-E-LIFE-001": {
+      "expired": "2030-01-01",
+      "status": "active"
+    }
+  }
+}
