@@ -20,7 +20,7 @@
     edit_doorid = "Z1612"
 
     -- DF WORLD LIST
-    list_world_DF = { "UKRWK", "BNTDU", "GSSWH", "PYHZH", "NTLWG", "LSFWF", "VRGWP", "AVLJP", "MXPFK", "CMDUY", "VKZYV", "OFUHM", "EQCWD", "NWWFE", "AQNFQ", "WIGGC", "SJTXQ", "YKQYI", "QTSST", "EHLWJ", "FBOPG", "YKIJR", "UXVIM", "XYOXQ", "GPKZJ", "RDIBN", "IICWY", "LRSUG", "EJXYO", "IVZBN", "JWVDP", "WQSYE" }
+    list_world_DF = { "OFUHM", "EQCWD", "NWWFE", "AQNFQ", "WIGGC", "SJTXQ", "YKQYI", "QTSST", "EHLWJ", "FBOPG", "YKIJR", "UXVIM", "XYOXQ", "GPKZJ", "RDIBN", "IICWY", "LRSUG", "EJXYO", "IVZBN", "JWVDP", "WQSYE" }
     limit_bot_per_world = 3
     whiteListGrowid = {"ZayDF"}
 
