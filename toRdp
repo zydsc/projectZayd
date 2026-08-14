@@ -2,10 +2,38 @@
 -- KONFIGURASI WORLD & STORAGE
 -- ========================================================
 worldDF = {
+    {world = "UKRWK", door = "Z1612"},
+    {world = "BNTDU", door = "Z1612"},
+    {world = "GSSWH", door = "Z1612"},
     {world = "PYHZH", door = "Z1612"},
     {world = "NTLWG", door = "Z1612"},
     {world = "LSFWF", door = "Z1612"},
-    {world = "VRGWP", door = "Z1612"}
+    {world = "VRGWP", door = "Z1612"},
+    {world = "AVLJP", door = "Z1612"},
+    {world = "MXPFK", door = "Z1612"},
+    {world = "CMDUY", door = "Z1612"},
+    {world = "VKZYV", door = "Z1612"},
+    {world = "OFUHM", door = "Z1612"},
+    {world = "EQCWD", door = "Z1612"},
+    {world = "NWWFE", door = "Z1612"},
+    {world = "AQNFQ", door = "Z1612"},
+    {world = "WIGGC", door = "Z1612"},
+    {world = "SJTXQ", door = "Z1612"},
+    {world = "YKQYI", door = "Z1612"},
+    {world = "QTSST", door = "Z1612"},
+    {world = "EHLWJ", door = "Z1612"},
+    {world = "FBOPG", door = "Z1612"},
+    {world = "YKIJR", door = "Z1612"},
+    {world = "UXVIM", door = "Z1612"},
+    {world = "XYOXQ", door = "Z1612"},
+    {world = "GPKZJ", door = "Z1612"},
+    {world = "RDIBN", door = "Z1612"},
+    {world = "IICWY", door = "Z1612"},
+    {world = "LRSUG", door = "Z1612"},
+    {world = "EJXYO", door = "Z1612"},
+    {world = "IVZBN", door = "Z1612"},
+    {world = "JWVDP", door = "Z1612"},
+    {world = "WQSYE", door = "Z1612"}
 }
 
 storageWorld = "SDIRT55"  -- Ganti dengan nama world storage
