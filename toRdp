@@ -1,0 +1,374 @@
+-- ========================================================
+-- KONFIGURASI WORLD & STORAGE
+-- ========================================================
+worldDF = {
+    {world = "PYHZH", door = "Z1612"},
+    {world = "NTLWG", door = "Z1612"},
+    {world = "LSFWF", door = "Z1612"},
+    {world = "VRGWP", door = "Z1612"}
+}
+
+storageWorld = "SDIRT55"  -- Ganti dengan nama world storage
+storageDoorId = "Z1612"   -- Ganti dengan ID door storage
+
+local id_drop = {2, 3, 4, 5, 10, 11, 14, 15}
+
+-- ========================================================
+-- PENGATURAN MULTI-BOT
+-- ========================================================
+maxBotInWorld = 3 -- Maksimal bot yang bekerja di 1 world yang sama
+
+-- ========================================================
+-- INISIALISASI BOT & PEMBAGIAN TUGAS
+-- ========================================================
+local bot = getBot()
+if not bot then 
+    print("[ERROR] Script ini membutuhkan konteks bot yang aktif!")
+    return 
+end
+
+-- Mendapatkan index bot (jika -1 atau nil, set ke 1)
+local bIndex = (bot.index and bot.index > 0) and bot.index or 1
+
+-- Menentukan index world untuk bot berdasarkan maxBotInWorld
+-- Contoh maxBot=2 -> Bot 1 & 2 (World 1), Bot 3 & 4 (World 2), dst.
+local assignedIndex = math.ceil(bIndex / maxBotInWorld)
+local currentDFIndex = ((assignedIndex - 1) % #worldDF) + 1
+
+-- Menentukan urutan bot di dalam world tersebut (1 sampai maxBotInWorld)
+local botPosInWorld = ((bIndex - 1) % maxBotInWorld) + 1
+
+-- Menentukan arah gerak bot agar tidak menumpuk di area yang sama
+-- Ganjil: Kiri -> Kanan, Genap: Kanan -> Kiri
+local isReverse = (botPosInWorld % 2 == 0)
+
+-- Pengaturan Bot Lucifer
+bot.auto_collect = true
+bot.collect_range = 3
+bot.auto_leave_on_mod = true
+bot.auto_trash = false
+bot:setInterval(Action.move, 200/1000)
+bot.move_range = 3
+
+-- Menyesuaikan Delay (bisa diedit sesuai ping)
+local delay_join_world = 5000
+local delay_path = math.random(100, 150)
+local delay_hit = math.random(150, 200)
+
+-- ========================================================
+-- FUNGSI HELPER & UTILITY
+-- ========================================================
+function disconnect()
+    local isDc = (getBot().status ~= BotStatus.online)
+    if isDc then
+        print("[STATUS] Bot disconnected / not online")
+    end
+    return isDc
+end
+
+function isInsideDoor()
+    local me = getLocal()
+    if not me then return false end
+    local x = math.floor(me.posx / 32)
+    local y = math.floor(me.posy / 32)
+    local tile = getTile(x, y)
+    local inside = tile and tile.fg ~= 6
+    print("[CHECK] isInsideDoor:", inside)
+    return inside
+end
+
+function joinWorld(world_name, door_id)
+    local myBot = getBot()
+    local target_door = (door_id and door_id:match("%S")) and door_id or nil
+    print("[ACTION] Mencoba join world:", world_name, "Door:", tostring(target_door))
+    
+    while not disconnect() do
+        if target_door then
+            if myBot:isInWorld(world_name) and isInsideDoor() then break end
+            print("[WARP] Warping ke", world_name, "dengan door", target_door)
+            myBot:warp(world_name, target_door)
+        else
+            if myBot:isInWorld(world_name) then break end
+            print("[WARP] Warping ke", world_name)
+            myBot:warp(world_name)
+        end
+        sleep(delay_join_world)
+    end
+    print("[SUCCESS] Berhasil masuk world:", world_name)
+end
+
+function inventory(id)
+    local inv = getBot():getInventory()
+    if not inv then return 0 end
+    return inv:findItem(id) or 0
+end
+
+function inventoryFull()
+    for _, id in ipairs(id_drop) do
+        if inventory(id) >= 200 then
+            print("[CHECK] Inventory Penuh! Item ID:", id, "Jumlah >= 200")
+            return true
+        end
+    end
+    return false
+end
+
+function handleInventoryFull()
+    if inventoryFull() then
+        print("[LOG] Handling inventory full: Menuju storage world...")
+        local DF = worldDF[currentDFIndex]
+        dropItems()
+        print("[LOG] Kembali ke World DF:", DF.world)
+        joinWorld(DF.world, DF.door)
+    end
+end
+
+function getPos()
+    local me = getLocal()
+    if not me then return 0, 0 end
+    local x = math.floor(me.posx / 32)
+    local y = math.floor(me.posy / 32)
+    return x, y
+end
+
+function nextDFWorld()
+    currentDFIndex = currentDFIndex + 1
+    if currentDFIndex > #worldDF then
+        currentDFIndex = 1
+    end
+    print("[WORLD] Pindah ke indeks DF World berikutnya:", currentDFIndex)
+end
+
+function isWorldFinished()
+    print("[CHECK] Memeriksa apakah World sudah tuntas...")
+    if disconnect() then return false end
+
+    for y = 25, 53, 2 do
+        for x = 1, 98 do
+            local tileTop = getTile(x, y)
+            local tileBottom = getTile(x, y + 1)
+
+            if not tileTop or not tileBottom then
+                return false
+            end
+
+            if tileTop.fg ~= 0 or tileBottom.fg == 0 then
+                return false
+            end
+        end
+    end
+
+    print("[CHECK] World SUDAH SELESAI fully!")
+    return true
+end
+
+function dropItems()
+    print("[STORAGE] Menuju storage world untuk drop items...")
+    local myBot = getBot()
+    joinWorld(storageWorld, storageDoorId)
+    myBot.auto_collect = false
+    sleep(100)
+    
+    while not disconnect() and inventoryFull() do
+        for _, id in ipairs(id_drop) do
+            while not disconnect() and inventory(id) > 0 do
+                local attempts = 0
+                while not disconnect() and inventory(id) > 0 and attempts < 3 do
+                    print("[DROP] Dropping item ID:", id, "Jumlah:", inventory(id))
+                    myBot:drop(id, inventory(id))
+                    sleep(500)
+                    attempts = attempts + 1
+                end
+                
+                if not disconnect() and inventory(id) > 0 then
+                    local x, y = getPos()
+                    print("[DROP] Bergeser sedikit untuk drop ulang...")
+                    myBot:findPath(x + 1, y)
+                    sleep(500)
+                end
+            end
+        end
+    end
+    myBot.auto_collect = true
+    print("[STORAGE] Selesai drop items.")
+end
+
+-- ========================================================
+-- FUNGSI CLEAR AREA
+-- ========================================================
+function clearSide(x)
+    if disconnect() then return end
+    local myBot = getBot()
+    print("[ACTION] Bot " .. bIndex .. " clearing side X:", x)
+    for y = 0, 53 do
+        if disconnect() then return end
+        if inventoryFull() then handleInventoryFull() end
+        
+        local tile = getTile(x, y)
+        if not disconnect() and tile and (tile.fg ~= 0 or tile.bg ~= 0) then
+            local targetY = math.max(0, y - 1)
+            myBot:findPath(x, targetY)
+            sleep(delay_path)
+            
+            while not disconnect() and (getTile(x, y).fg ~= 0 or getTile(x, y).bg ~= 0) do
+                if inventoryFull() then handleInventoryFull() end
+                myBot:hit(x, y)
+                sleep(delay_hit)
+            end
+        end
+    end
+end
+
+function clearDirt()
+    if disconnect() then return end
+    local myBot = getBot()
+    
+    -- Penerapan Arah Pembersihan
+    local startX, endX, stepX = 1, 98, 1
+    if isReverse then startX, endX, stepX = 98, 1, -1 end
+
+    for y = 53, 23, -2 do
+        if disconnect() then return end
+        for x = startX, endX, stepX do
+            if disconnect() then return end
+            if inventoryFull() then handleInventoryFull() end
+
+            local tile = getTile(x, y)
+            if tile then
+                local isValidTile = (tile.fg ~= 0 or tile.bg ~= 0) 
+                    and tile.fg ~= 202 and tile.fg ~= 242 and tile.fg ~= 12 
+                    and tile.fg ~= 7164 and tile.fg ~= 6 and tile.fg ~= 8 
+                    and tile.fg ~= 226 and tile.fg ~= 3760 and tile.fg ~= 2810
+
+                if not disconnect() and isValidTile then
+                    local destX = x - 1
+                    if x == 0 then destX = x + 1 end
+                    
+                    myBot:findPath(destX, y)
+                    sleep(delay_path)
+                    
+                    while not disconnect() and (getTile(x, y).fg ~= 0 or getTile(x, y).bg ~= 0) do
+                        if inventoryFull() then handleInventoryFull() end
+                        myBot:hit(x, y)
+                        sleep(delay_hit)
+                    end
+                end
+            end
+        end
+    end
+end
+
+function clearLava()
+    if disconnect() then return end
+    local myBot = getBot()
+    
+    local startX, endX, stepX = 0, 99, 1
+    if isReverse then startX, endX, stepX = 99, 0, -1 end
+
+    for y = 53, 23, -1 do
+        if disconnect() then return end
+        for x = startX, endX, stepX do
+            if disconnect() then return end
+            if inventoryFull() then handleInventoryFull() end
+
+            local tile = getTile(x, y)
+            if not disconnect() and tile and tile.fg == 4 then
+                local targetY = math.max(0, y - 1)
+                myBot:findPath(x, targetY)
+                sleep(delay_path)
+                
+                while not disconnect() and getTile(x, y).fg == 4 do
+                    if inventoryFull() then handleInventoryFull() end
+                    myBot:hit(x, y)
+                    sleep(delay_hit)
+                end
+            end
+        end
+    end
+end
+
+function clearRock()
+    if disconnect() then return end
+    local myBot = getBot()
+
+    local startX, endX, stepX = 0, 99, 1
+    if isReverse then startX, endX, stepX = 99, 0, -1 end
+
+    for y = 53, 23, -1 do
+        if disconnect() then return end
+        for x = startX, endX, stepX do
+            if disconnect() then return end
+            if inventoryFull() then handleInventoryFull() end
+
+            local tile = getTile(x, y)
+            if not disconnect() and tile and tile.fg == 10 then
+                local targetY = math.max(0, y - 1)
+                myBot:findPath(x, targetY)
+                sleep(delay_path)
+                
+                while not disconnect() and getTile(x, y).fg == 10 do
+                    if inventoryFull() then handleInventoryFull() end
+                    myBot:hit(x, y)
+                    sleep(delay_hit)
+                end
+            end
+        end
+    end
+end
+
+-- ========================================================
+-- ALUR UTAMA (MAIN LOOPS)
+-- ========================================================
+function mainClear()
+    print("[LOOP] Masuk ke loop mainClear()")
+    while not disconnect() and not isWorldFinished() do
+        local DF = worldDF[currentDFIndex]
+        print("[LOOP] Menjalankan siklus clear di world DF:", DF.world)
+
+        print("[STEP 1] Memulai pembersihan area sisi (clearSide)...")
+        -- Distribusi tugas side clearing antar bot di dalam world yang sama
+        -- Bot 1 mengambil x=0 dan x=1, Bot 2 mengambil x=99 dan x=98
+        local sideCols = {0, 99, 1, 98} 
+        for i = 1, #sideCols do
+            -- Mengecek apakah index kolom ini adalah jatah milik bot ini
+            if ((i - 1) % maxBotInWorld) + 1 == botPosInWorld then
+                clearSide(sideCols[i])
+            end
+        end
+
+        print("[STEP 2] Memulai pembersihan area bawah...")
+        clearDirt()
+        clearLava()
+        clearRock()
+
+        sleep(500)
+    end
+end
+
+function mainDF()
+    print("[SYSTEM] Memulai Script mainDF()...")
+    print("[SYSTEM] Bot Global Index:", bIndex, "| Posisi Bot di World:", botPosInWorld, "| Target DF Index:", currentDFIndex, "| Reverse Mined:", isReverse)
+    while true do
+        sleep(2000)
+        if disconnect() then
+            print("[SYSTEM] Bot terputus, menunggu reconnect...")
+            sleep(2000)
+        else
+            local DF = worldDF[currentDFIndex]
+            print("[SYSTEM] Join World:", DF.world)
+            
+            joinWorld(DF.world, DF.door)
+            mainClear()
+            handleInventoryFull()
+
+            if not disconnect() and isWorldFinished() then
+                print("[SYSTEM] World DF", DF.world, "telah SELESAI fully! Menyiapkan pindah world...")
+                nextDFWorld()
+                sleep(1500)
+            end
+        end
+    end
+end
+
+-- JALANKAN SCRIPT
+mainDF()
