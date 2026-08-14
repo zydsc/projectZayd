@@ -734,7 +734,7 @@ function takePlat(world)
                             reconnect(world_plat, id_door_plat)
                             print("findpath to plat ".. x.. ", ".. y)
                         end
-                        getBot():collectObject(plat_id, 3)
+                        getBot():collect(2)
                         sleep(1000)
                         print("Collecting")
                     end
@@ -996,7 +996,7 @@ function takeDirt(world)
                             reconnect(world_storage, id_world_storage)
                             print("findpath to dirt ".. x.. ", ".. y)
                         end
-                        getBot():collectObject(2, 3)
+                        getBot():collect(2)
                         sleep(1000)
                         print("Collecting Dirt")
                     end
